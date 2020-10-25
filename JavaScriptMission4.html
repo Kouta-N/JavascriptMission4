@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>JavaScriptMission 4</title>
+
+</head>
+<body>
+  <h2 id="announce"></h2>
+  <p id="genre" class="genreClass"></p>
+  <p id="level"></p>
+  <div class="container">
+    <p id="question" class="frame-question"></p>
+    <button id="start-button">開始</button>
+    <div id="answer1"></div>
+    <div id="answer2"></div>
+    <div id="answer3"></div>
+    <div id="answer4"></div>
+    <p id="result"></p>
+    <button id="restart-button">ホームに戻る</button>
+  </div>
+
+  <script>
+  const API_URL = 'https://opentdb.com/api.php?amount=10&type=multiple'
+
+  const gemeState = {
+    quizzes: [],
+    currentIndex: 0,
+    numberOfCorrects: 0
+  };
+
+
+  const announceText = document.getElementById('announce'); 
+  const pQuestion = document.getElementById('question');
+  const pQuizGenre = document.getElementById('genre');
+  const pQuizLevel = document.getElementById('level');
+  
+  const pResult = document.getElementById('result');
+  const startButton = document.getElementById('start-button');
+  const restartButton = document.getElementById('restart-button');
+
+  let firstAnswer = Array();
+  let secondAnswer = Array();
+  let thirdAnswer = Array();
+  let fourthAnswer = Array();
+
+  let firstAnswerButton = Array();
+  let secondAnswerButton = Array();
+  let thirdAnswerButton = Array();
+  let fourthAnswerButton = Array();
+
+  firstSetting();
+
+
+// 最初の設定画面の表示を関数化 //
+  function firstSetting() {
+  restartButton.style.display = 'none';
+  announceText.textContent = 'ようこそ';
+  pQuestion.textContent = '以下のボタンをクリック';
+  }
+
+ // スタートボタンを押したらクイズ情報を取得する //
+  startButton.addEventListener('click', (event) => {
+    fetchQuizData();
+  });
+
+  // ホームへ戻るボタンをクリックしたら最初の画面に //
+  restartButton.addEventListener('click', (event) => {
+    startButton.style.display = 'block';
+    firstSetting();
+  });
+
+// クイズデータをAPI_URLから取得する関数 //
+  async function fetchQuizData() {//asynk functionは結果にPromiseを返す非同期関数
+    announceText.textContent = '取得中';
+    pQuestion.textContent = '少々お待ち下さい';
+    pResult.textContent = '';
+    startButton.style.display = 'none';
+
+    const response = await fetch(API_URL);
+    const data = await response.json();
+
+    gemeState.quizzes = data.results;
+    gemeState.currentIndex = 0;
+    gemeState.numberOfCorrects = 0;
+
+    for(index = 0 ; index < gemeState.quizzes.length; index++){
+      firstAnswerButton[index] = document.createElement('button');
+      secondAnswerButton[index] = document.createElement('button');
+      thirdAnswerButton[index] = document.createElement('button');
+      fourthAnswerButton[index] = document.createElement('button');
+    }
+
+    setNextQuiz();
+  }
+
+// 回答済みクイズを消去し、次のクイズを設定するかどうかを判定する関数 //
+  function setNextQuiz() {
+    pQuestion.textContent = '';
+    
+    if(gemeState.currentIndex !== 0){
+    removeAllAnswers();
+    }
+
+    if (gemeState.currentIndex < gemeState.quizzes.length) {
+      makeQuiz();
+    } else {
+      finishQuiz();
+    }
+
+  }
+
+ // 次のクイズを設定する関数 //
+  function makeQuiz() {
+    const quiz = gemeState.quizzes[gemeState.currentIndex];
+    //console.log(quiz);
+    pQuestion.textContent = quiz.question;
+    const answers = shuffleAnswers(quiz);
+    console.log('Anser: '+`${quiz.correct_answer}`);
+    announceText.textContent = '問題'+`${gemeState.currentIndex+1}`;
+    pQuizGenre.textContent = '[ジャンル] '+`${ gemeState.quizzes[gemeState.currentIndex].category}`;
+    pQuizLevel.textContent = '[難易度] '+`${gemeState.quizzes[gemeState.currentIndex].difficulty}`;
+
+    firstAnswer[gemeState.currentIndex] = document.getElementById('answer1');
+    secondAnswer[gemeState.currentIndex] = document.getElementById('answer2');
+    thirdAnswer[gemeState.currentIndex] = document.getElementById('answer3');
+    fourthAnswer[gemeState.currentIndex] = document.getElementById('answer4');
+
+
+    // ボタンに回答のテキストを追加
+    firstAnswerButton[gemeState.currentIndex].textContent = answers[0];
+    firstAnswer[gemeState.currentIndex].appendChild(firstAnswerButton[gemeState.currentIndex]);
+
+    secondAnswerButton[gemeState.currentIndex].textContent = answers[1];
+    secondAnswer[gemeState.currentIndex].appendChild(secondAnswerButton[gemeState.currentIndex]);
+
+    thirdAnswerButton[gemeState.currentIndex].textContent = answers[2];
+    thirdAnswer[gemeState.currentIndex].appendChild(thirdAnswerButton[gemeState.currentIndex]);
+
+    fourthAnswerButton[gemeState.currentIndex].textContent = answers[3];
+    fourthAnswer[gemeState.currentIndex].appendChild(fourthAnswerButton[gemeState.currentIndex]);
+
+  // それぞれの回答ボタンの動作を設定 
+    firstAnswerButton[gemeState.currentIndex].addEventListener('click', (event) => {
+         if (answers[0] === quiz.correct_answer) {
+           gemeState.numberOfCorrects++;
+         } 
+         gemeState.currentIndex++;
+         //console.log(gemeState.numberOfCorrects);
+         //console.log(gemeState.currentIndex);
+         setNextQuiz();
+    });
+
+    secondAnswerButton[gemeState.currentIndex].addEventListener('click', (event) => {
+         if (answers[1] === quiz.correct_answer) {
+           gemeState.numberOfCorrects++;
+         }
+         gemeState.currentIndex++;
+  
+        console.log(gemeState.numberOfCorrects);
+        console.log(gemeState.currentIndex);
+         
+         setNextQuiz();
+    });
+
+    thirdAnswerButton[gemeState.currentIndex].addEventListener('click', (event) => {
+         if (answers[2] === quiz.correct_answer) {
+           gemeState.numberOfCorrects++;
+         } 
+         gemeState.currentIndex++;
+      
+       console.log(gemeState.numberOfCorrects);
+       console.log(gemeState.currentIndex);
+         
+         setNextQuiz();
+    });
+
+    fourthAnswerButton[gemeState.currentIndex].addEventListener('click', (event) => {
+         if (answers[3] === quiz.correct_answer) {
+           gemeState.numberOfCorrects++;
+         } 
+         gemeState.currentIndex++;
+         
+         console.log(gemeState.numberOfCorrects);
+         console.log(gemeState.currentIndex);
+         
+         setNextQuiz();
+    });
+
+
+  
+  }
+
+// 次の問題に移行するためボタンをすべて消去する関数 //
+  function removeAllAnswers() {
+
+     firstAnswerButton[gemeState.currentIndex - 1].style.display = 'none';
+     secondAnswerButton[gemeState.currentIndex - 1].style.display = 'none';
+     thirdAnswerButton[gemeState.currentIndex - 1].style.display = 'none';
+     fourthAnswerButton[gemeState.currentIndex - 1].style.display = 'none';
+    
+  }
+
+
+// クイズの回答をシャッフルする関数 //
+  function shuffleAnswers(quiz) {
+    const answers = [quiz.correct_answer, ...quiz.incorrect_answers];
+    return shuffle(answers);
+  }
+
+  function shuffle(array) {
+    const shffuledArray = array.slice();
+    for (let index1 = shffuledArray.length - 1; index1 >= 0; index1--){
+      const index2 = Math.floor(Math.random() * (index1 + 1));
+      [shffuledArray[index1], shffuledArray[index2]] = [shffuledArray[index2], shffuledArray[index1]];
+    }
+    return shffuledArray;
+  }
+
+// クイズが終了した場合の動作を関数化 //
+    function finishQuiz() {
+      announceText.textContent = '';
+      pQuizGenre.textContent = '';
+      pQuizLevel.textContent = '';
+      announceText.textContent = 'あなたの正解数は'+`${gemeState.numberOfCorrects}`+'です！';
+      pQuestion.textContent = '再度チャレンジしたい場合は以下をチェック！';
+      restartButton.style.display = 'block';
+    }
+
+  </script>
+
+<style>
+.frame-question{
+  border-top    : 1px solid;
+  border-bottom : 1px solid;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  margin-bottom: 4px; 
+  font-size: x-small;
+}
+
+.genreClass{
+  margin-bottom: -20px;
+}
+
+</style>
+
+  </body>
+  </html>
