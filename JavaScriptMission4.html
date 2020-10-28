@@ -124,7 +124,6 @@
     const quiz = quizArray[cuIndex];
     pQues.textContent = quiz.question;
     const answers = shuffleAnswers(quiz);
-    console.log('Anser: '+`${quiz.correct_answer}`);
     annText.textContent = '問題'+`${cuIndex+1}`;
     pQG.textContent = '[ジャンル] '+`${quizArray[cuIndex].category}`;
     pQL.textContent = '[難易度] '+`${quizArray[cuIndex].difficulty}`;
