@@ -12,10 +12,10 @@
   <div class="container">
     <p id="question" class="frame-question"></p>
     <button id="start-button">開始</button>
+    <div id="answer0"></div>
     <div id="answer1"></div>
     <div id="answer2"></div>
     <div id="answer3"></div>
-    <div id="answer4"></div>
     <p id="result"></p>
     <button id="restart-button">ホームに戻る</button>
   </div>
@@ -23,188 +23,139 @@
   <script>
   const API_URL = 'https://opentdb.com/api.php?amount=10&type=multiple'
 
-  const gemeState = {
-    quizzes: [],
-    currentIndex: 0,
-    numberOfCorrects: 0
-  };
-
-
-  const announceText = document.getElementById('announce'); 
-  const pQuestion = document.getElementById('question');
-  const pQuizGenre = document.getElementById('genre');
-  const pQuizLevel = document.getElementById('level');
-  
-  const pResult = document.getElementById('result');
-  const startButton = document.getElementById('start-button');
-  const restartButton = document.getElementById('restart-button');
-
-  let firstAnswer = Array();
-  let secondAnswer = Array();
-  let thirdAnswer = Array();
-  let fourthAnswer = Array();
-
-  let firstAnswerButton = Array();
-  let secondAnswerButton = Array();
-  let thirdAnswerButton = Array();
-  let fourthAnswerButton = Array();
-
-  firstSetting();
-
-
-// 最初の設定画面の表示を関数化 //
-  function firstSetting() {
-  restartButton.style.display = 'none';
-  announceText.textContent = 'ようこそ';
-  pQuestion.textContent = '以下のボタンをクリック';
+  class GameState{
+    constructor(){
+      this.quizzes = [];
+      this.currentIndex = 0;
+      this.numberOfCorrects = 0;
+    }
   }
 
- // スタートボタンを押したらクイズ情報を取得する //
-  startButton.addEventListener('click', (event) => {
-    fetchQuizData();
+  class QuizDisplay{
+   constructor(){
+    this.choices = 4;//選択肢の数はここを変えて設定する
+    this.announceText = document.getElementById('announce'); 
+    this.pQuestion = document.getElementById('question');
+    this.pQuizGenre = document.getElementById('genre');
+    this.pQuizLevel = document.getElementById('level');
+    this.pResult = document.getElementById('result');
+    this.AnswerText = [this.choices];
+
+    this.AnswerButton = [this.choices];
+    for(let num = 0;num < this.choices; num++){
+    this.AnswerButton[num] = document.createElement('button');
+    }
+   }
+  }
+
+  this.startButton = document.getElementById('start-button');
+  this.restartButton = document.getElementById('restart-button');
+
+  // 開始ボタンの設定 //
+  this.startButton.addEventListener('click', (event) => {
+    fetchQuizData(
+      state.quizzes,
+      state.currentIndex,
+      state.numberOfCorrects,
+      disp.choices,
+      disp.announceText,
+      disp.pQuestion,
+      disp.pQuizGenre,
+      disp.pQuizLevel,
+      disp.pResult,
+      disp.AnswerText,
+      disp.AnswerButton
+      );
+  });
+  
+   // ホームへ戻るボタンをクリックしたら最初の画面に //
+  this.restartButton.addEventListener('click', (event) => {
+    this.startButton.style.display = 'block';
+    firstSetting(disp.announceText, disp.pQuestion);
   });
 
-  // ホームへ戻るボタンをクリックしたら最初の画面に //
-  restartButton.addEventListener('click', (event) => {
-    startButton.style.display = 'block';
-    firstSetting();
-  });
+  const state = new GameState();
+  const disp = new QuizDisplay();
+  firstSetting(disp.announceText, disp.pQuestion);
+
+ // 初期画面を設定する関数 //
+  function firstSetting(annText,pQues) {
+    restartButton.style.display = 'none';
+    annText.textContent = 'ようこそ';
+    pQues.textContent = '以下のボタンをクリック';
+  }
+
 
 // クイズデータをAPI_URLから取得する関数 //
-  async function fetchQuizData() {//asynk functionは結果にPromiseを返す非同期関数
-    announceText.textContent = '取得中';
-    pQuestion.textContent = '少々お待ち下さい';
-    pResult.textContent = '';
-    startButton.style.display = 'none';
-
+  async function fetchQuizData(quizArray,cuIndex,numCorre,choiseNum,annText,pQues,pQG,pQL,pRes,AnText,AnButton) {//asynk functionは結果にPromiseを返す非同期関数
+    annText.textContent = '取得中';
+    pQues.textContent = '少々お待ち下さい';
+    pRes.textContent = '';
+    stButton = document.getElementById('start-button');
+    stButton.style.display = 'none';
+    
     const response = await fetch(API_URL);
     const data = await response.json();
 
-    gemeState.quizzes = data.results;
-    gemeState.currentIndex = 0;
-    gemeState.numberOfCorrects = 0;
+    quizArray = data.results;
+    correctNum = 0;
 
-    for(index = 0 ; index < gemeState.quizzes.length; index++){
-      firstAnswerButton[index] = document.createElement('button');
-      secondAnswerButton[index] = document.createElement('button');
-      thirdAnswerButton[index] = document.createElement('button');
-      fourthAnswerButton[index] = document.createElement('button');
-    }
-
-    setNextQuiz();
+    setNextQuiz(quizArray,cuIndex,numCorre,choiseNum,annText,pQues,pQG,pQL,pRes,AnText,AnButton);
   }
 
-// 回答済みクイズを消去し、次のクイズを設定するかどうかを判定する関数 //
-  function setNextQuiz() {
-    pQuestion.textContent = '';
+  // 回答済みクイズを消去し、次のクイズを設定するかどうかを判定する関数 //
+  function setNextQuiz(quizArray,cuIndex,numCorre,choiseNum,annText,pQues,pQG,pQL,pRes,AnText,AnButton) {
+    pQues.textContent = '';
     
-    if(gemeState.currentIndex !== 0){
-    removeAllAnswers();
+    if(cuIndex !== 0){
+    removeAllAnswers(AnButton,choiseNum);
     }
 
-    if (gemeState.currentIndex < gemeState.quizzes.length) {
-      makeQuiz();
+    if (cuIndex < quizArray.length) {
+      makeQuiz(quizArray,cuIndex,numCorre,choiseNum,annText,pQues,pQG,pQL,pRes,AnText,AnButton);
     } else {
-      finishQuiz();
+      finishQuiz(annText,pQues,pQG,pQL,numCorre);
     }
 
   }
 
  // 次のクイズを設定する関数 //
-  function makeQuiz() {
-    const quiz = gemeState.quizzes[gemeState.currentIndex];
-    //console.log(quiz);
-    pQuestion.textContent = quiz.question;
+  function makeQuiz(quizArray,cuIndex,numCorre,choiseNum,annText,pQues,pQG,pQL,pRes,AnText,AnButton) {
+    const quiz = quizArray[cuIndex];
+    pQues.textContent = quiz.question;
     const answers = shuffleAnswers(quiz);
     console.log('Anser: '+`${quiz.correct_answer}`);
-    announceText.textContent = '問題'+`${gemeState.currentIndex+1}`;
-    pQuizGenre.textContent = '[ジャンル] '+`${ gemeState.quizzes[gemeState.currentIndex].category}`;
-    pQuizLevel.textContent = '[難易度] '+`${gemeState.quizzes[gemeState.currentIndex].difficulty}`;
+    annText.textContent = '問題'+`${cuIndex+1}`;
+    pQG.textContent = '[ジャンル] '+`${quizArray[cuIndex].category}`;
+    pQL.textContent = '[難易度] '+`${quizArray[cuIndex].difficulty}`;
 
-    firstAnswer[gemeState.currentIndex] = document.getElementById('answer1');
-    secondAnswer[gemeState.currentIndex] = document.getElementById('answer2');
-    thirdAnswer[gemeState.currentIndex] = document.getElementById('answer3');
-    fourthAnswer[gemeState.currentIndex] = document.getElementById('answer4');
+    for(let num = 0;num < choiseNum; num++){
+    AnText[num] = document.getElementById('answer'+`${num}`);
+    AnButton[num].textContent = answers[num];
+    AnText[num].appendChild(AnButton[num]);
 
-
-    // ボタンに回答のテキストを追加
-    firstAnswerButton[gemeState.currentIndex].textContent = answers[0];
-    firstAnswer[gemeState.currentIndex].appendChild(firstAnswerButton[gemeState.currentIndex]);
-
-    secondAnswerButton[gemeState.currentIndex].textContent = answers[1];
-    secondAnswer[gemeState.currentIndex].appendChild(secondAnswerButton[gemeState.currentIndex]);
-
-    thirdAnswerButton[gemeState.currentIndex].textContent = answers[2];
-    thirdAnswer[gemeState.currentIndex].appendChild(thirdAnswerButton[gemeState.currentIndex]);
-
-    fourthAnswerButton[gemeState.currentIndex].textContent = answers[3];
-    fourthAnswer[gemeState.currentIndex].appendChild(fourthAnswerButton[gemeState.currentIndex]);
-
-  // それぞれの回答ボタンの動作を設定 
-    firstAnswerButton[gemeState.currentIndex].addEventListener('click', (event) => {
-         if (answers[0] === quiz.correct_answer) {
-           gemeState.numberOfCorrects++;
-         } 
-         gemeState.currentIndex++;
-         //console.log(gemeState.numberOfCorrects);
-         //console.log(gemeState.currentIndex);
-         setNextQuiz();
-    });
-
-    secondAnswerButton[gemeState.currentIndex].addEventListener('click', (event) => {
-         if (answers[1] === quiz.correct_answer) {
-           gemeState.numberOfCorrects++;
-         }
-         gemeState.currentIndex++;
-  
-        console.log(gemeState.numberOfCorrects);
-        console.log(gemeState.currentIndex);
-         
-         setNextQuiz();
-    });
-
-    thirdAnswerButton[gemeState.currentIndex].addEventListener('click', (event) => {
-         if (answers[2] === quiz.correct_answer) {
-           gemeState.numberOfCorrects++;
-         } 
-         gemeState.currentIndex++;
-      
-       console.log(gemeState.numberOfCorrects);
-       console.log(gemeState.currentIndex);
-         
-         setNextQuiz();
-    });
-
-    fourthAnswerButton[gemeState.currentIndex].addEventListener('click', (event) => {
-         if (answers[3] === quiz.correct_answer) {
-           gemeState.numberOfCorrects++;
-         } 
-         gemeState.currentIndex++;
-         
-         console.log(gemeState.numberOfCorrects);
-         console.log(gemeState.currentIndex);
-         
-         setNextQuiz();
-    });
-
-
+    AnButton[num].addEventListener('click', (event) => {
+       if(answers[num] === quiz.correct_answer) {
+         numCorre++;
+       } 
+         cuIndex++;
+         setNextQuiz(quizArray,cuIndex,numCorre,choiseNum,annText,pQues,pQG,pQL,pRes,AnText,AnButton);
+      });
+    
+   }
   
   }
 
 // 次の問題に移行するためボタンをすべて消去する関数 //
-  function removeAllAnswers() {
-
-     firstAnswerButton[gemeState.currentIndex - 1].style.display = 'none';
-     secondAnswerButton[gemeState.currentIndex - 1].style.display = 'none';
-     thirdAnswerButton[gemeState.currentIndex - 1].style.display = 'none';
-     fourthAnswerButton[gemeState.currentIndex - 1].style.display = 'none';
-    
+  function removeAllAnswers(AnButton,choiseNum) {
+    for(let num = 0;num < choiseNum; num++){
+      AnButton[num].remove();
+    }
   }
 
-
 // クイズの回答をシャッフルする関数 //
-  function shuffleAnswers(quiz) {
-    const answers = [quiz.correct_answer, ...quiz.incorrect_answers];
+  function shuffleAnswers(quizArray) {
+    const answers = [quizArray.correct_answer, ...quizArray.incorrect_answers];
     return shuffle(answers);
   }
 
@@ -218,12 +169,12 @@
   }
 
 // クイズが終了した場合の動作を関数化 //
-    function finishQuiz() {
-      announceText.textContent = '';
-      pQuizGenre.textContent = '';
-      pQuizLevel.textContent = '';
-      announceText.textContent = 'あなたの正解数は'+`${gemeState.numberOfCorrects}`+'です！';
-      pQuestion.textContent = '再度チャレンジしたい場合は以下をチェック！';
+    function finishQuiz(annText,pQues,pQG,pQL,numCorre) {
+      annText.textContent = '';
+      pQG.textContent = '';
+      pQL.textContent = '';
+      annText.textContent = 'あなたの正解数は'+`${numCorre}`+'です！';
+      pQues.textContent = '再度チャレンジしたい場合は以下をチェック！';
       restartButton.style.display = 'block';
     }
 
